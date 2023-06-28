@@ -617,7 +617,8 @@ extern C_ROCKSDB_LIBRARY_API const char* crocksdb_iter_key(
     const crocksdb_iterator_t*, size_t* klen);
 extern C_ROCKSDB_LIBRARY_API const char* crocksdb_iter_value(
     const crocksdb_iterator_t*, size_t* vlen);
-extern C_ROCKSDB_LIBRARY_API void crocksdb_iter_get_sst(const crocksdb_iterator_t*, crocksdb_column_family_meta_data_t*);
+
+extern C_ROCKSDB_LIBRARY_API void crocksdb_iter_get_sst(const crocksdb_iterator_t*, crocksdb_column_family_meta_data_t*, char**);
 extern C_ROCKSDB_LIBRARY_API void crocksdb_iter_get_error(
     const crocksdb_iterator_t*, char** errptr);
 

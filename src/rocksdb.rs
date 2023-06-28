@@ -331,6 +331,14 @@ impl<D> DBIterator<D> {
         Ok(valid)
     }
 
+    pub fn get_column_family_meta_data(&self) -> Result<ColumnFamilyMetaData, String> {
+        unsafe {
+            let md_inner = crocksdb_ffi::crocksdb_column_family_meta_data_create();
+            ffi_try!(crocksdb_iter_get_sst(self.inner, md_inner));
+            Ok(ColumnFamilyMetaData::from_ptr(md_inner))
+        }
+    }
+
     fn status(&self) -> Result<(), String> {
         unsafe {
             ffi_try!(crocksdb_iter_get_error(self.inner));

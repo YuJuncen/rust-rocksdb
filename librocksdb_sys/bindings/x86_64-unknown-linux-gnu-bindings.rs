@@ -1408,6 +1408,7 @@ extern "C" {
     pub fn crocksdb_iter_get_sst(
         arg1: *const crocksdb_iterator_t,
         arg2: *mut crocksdb_column_family_meta_data_t,
+        arg3: *mut *mut libc::c_char,
     );
 }
 extern "C" {

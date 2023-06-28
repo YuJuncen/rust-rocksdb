@@ -171,7 +171,6 @@ using rocksdb::WriteStallInfo;
 
 using rocksdb::BlockBasedTableFactory;
 using rocksdb::BottommostLevelCompaction;
-using rocksdb::ColumnFamilyData;
 using rocksdb::ColumnFamilyHandleImpl;
 using rocksdb::ColumnFamilyMetaData;
 using rocksdb::CompactionOptions;
@@ -1661,14 +1660,7 @@ const char* crocksdb_iter_value(const crocksdb_iterator_t* iter, size_t* vlen) {
 void crocksdb_iter_get_sst(const crocksdb_iterator_t* iter,
                            crocksdb_column_family_meta_data_t* meta,
                            char** errptr) {
-  const auto db_iter = dynamic_cast<rocksdb::ArenaWrappedDBIter*>(iter->rep);
-  if (db_iter == nullptr) {
-    const auto stat = Status::InvalidArgument(Slice("The input iterator should be `ArenaWrappedDBIter` (i.e. created by db->NewIterator)"));
-    SaveError(errptr, stat);
-    return;
-  }
-  const auto version = db_iter->version();
-  version->GetColumnFamilyMetaData(&meta->rep);
+  SaveError(errptr, iter->rep->GetColumnFamilyMetaData(&meta->rep));
 }
 
 bool crocksdb_iter_seqno(const crocksdb_iterator_t* iter, SequenceNumber* no) {

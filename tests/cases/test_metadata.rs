@@ -12,11 +12,54 @@
 // limitations under the License.
 
 use rocksdb::{
-    CFHandle, ColumnFamilyOptions, CompactionOptions, DBCompressionType, DBOptions, FlushOptions,
-    Writable, DB,
+    CFHandle, ColumnFamilyMetaData, ColumnFamilyOptions, CompactionOptions, DBCompressionType,
+    DBOptions, FlushOptions, ReadOptions, Writable, DB,
 };
 
 use super::tempdir_with_prefix;
+
+#[test]
+fn test_metadata_from_iter() {
+    let path = tempdir_with_prefix("_rust_rocksdb_test_metadata_from_iter");
+    let cf_name = "default";
+    let mut opts = DBOptions::new();
+    opts.create_if_missing(true);
+    let mut cf_opts = ColumnFamilyOptions::new();
+    cf_opts.set_disable_auto_compactions(true);
+    let db = DB::open_cf(
+        opts,
+        path.path().to_str().unwrap(),
+        vec![(cf_name, cf_opts)],
+    )
+    .unwrap();
+
+    db.put(b"key1", b"let's test some simple case:").unwrap();
+    db.put(b"key2", b"we will create a iterator.").unwrap();
+    let mut fopts = FlushOptions::default();
+    fopts.set_wait(true);
+    db.flush(&fopts).unwrap();
+
+    let iter = db.iter_opt(ReadOptions::default());
+    let current = db.get_column_family_meta_data(db.cf_handle(cf_name).unwrap());
+    db.put(b"key3", b"then, let's do a compaction.").unwrap();
+    db.compact_range(None, None);
+    let current_prime = db.get_column_family_meta_data(db.cf_handle(cf_name).unwrap());
+    let get_level_files = |cf: &ColumnFamilyMetaData| {
+        cf.get_levels()
+            .into_iter()
+            .enumerate()
+            .flat_map(|(level, files)| {
+                files
+                    .get_files()
+                    .into_iter()
+                    .map(move |f| format!("{}:{}", level, f.get_name()))
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_ne!(get_level_files(&current), get_level_files(&current_prime));
+    let files_by_iter = iter.get_column_family_meta_data().unwrap();
+    assert_eq!(get_level_files(&current), get_level_files(&files_by_iter));
+}
 
 #[test]
 fn test_metadata() {
