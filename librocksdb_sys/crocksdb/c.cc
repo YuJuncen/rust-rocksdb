@@ -14,6 +14,7 @@
 #include <limits>
 
 #include "db/column_family.h"
+#include "db/arena_wrapped_db_iter.h"
 #include "file/random_access_file_reader.h"
 #include "file/sequence_file_reader.h"
 #include "file/writable_file_writer.h"
@@ -1655,6 +1656,19 @@ const char* crocksdb_iter_value(const crocksdb_iterator_t* iter, size_t* vlen) {
   Slice s = iter->rep->value();
   *vlen = s.size();
   return s.data();
+}
+
+void crocksdb_iter_get_sst(const crocksdb_iterator_t* iter,
+                           crocksdb_column_family_meta_data_t* meta,
+                           char** errptr) {
+  const auto db_iter = dynamic_cast<rocksdb::ArenaWrappedDBIter*>(iter->rep);
+  if (db_iter == nullptr) {
+    const auto stat = Status::InvalidArgument(Slice("The input iterator should be `ArenaWrappedDBIter` (i.e. created by db->NewIterator)"));
+    SaveError(errptr, stat);
+    return;
+  }
+  const auto version = db_iter->version();
+  version->GetColumnFamilyMetaData(&meta->rep);
 }
 
 bool crocksdb_iter_seqno(const crocksdb_iterator_t* iter, SequenceNumber* no) {
